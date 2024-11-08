@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Authentication & App Test</title>
+</head>
+<body>
+    <h1>Firebase Authentication</h1>
+
+    <!-- Registrieren -->
+    <div>
+        <h2>Registrieren</h2>
+        <input type="email" id="register-email" placeholder="Email">
+        <input type="password" id="register-password" placeholder="Passwort">
+        <button onclick="handleRegister()">Registrieren</button>
+    </div>
+
+    <!-- Anmelden -->
+    <div>
+        <h2>Anmelden</h2>
+        <input type="email" id="login-email" placeholder="Email">
+        <input type="password" id="login-password" placeholder="Passwort">
+        <button onclick="handleLogin()">Anmelden</button>
+    </div>
+
+    <!-- Abmelden -->
+    <div>
+        <h2>Abmelden</h2>
+        <button onclick="handleLogout()">Abmelden</button>
+    </div>
+
+    <!-- App-Funktionen testen -->
+    <h1>App-Funktionen testen</h1>
+
+    <!-- Benutzerverwaltung -->
+    <button onclick="saveAuthUserinFireStore('Test User', 'https://example.com/avatar.png')">saveAuthUserinFireStore</button>
+    <button onclick="getAllMembers()">getAllMembers</button>
+    <button onclick="getAllChannels()">getAllChannels</button>
+<!-- Kanalverwaltung -->
+<div>
+    <h2>Kanal erstellen</h2>
+    <input type="text" id="channelName" placeholder="Channel Name">
+    <input type="text" id="channelDescription" placeholder="Channel Description">
+    <input type="text" id="creatorMemberId" placeholder="Creator Member ID">
+    <button onclick="createChannel(
+        document.getElementById('channelName').value,
+        document.getElementById('channelDescription').value,
+        document.getElementById('creatorMemberId').value)">
+        Create Channel
+    </button>
+</div>
+
+<div>
+    <h2>Mitglied zum Kanal hinzufügen</h2>
+    <input type="text" id="addChannelId" placeholder="Channel ID">
+    <input type="text" id="addMemberId" placeholder="Member ID">
+    <button onclick="addMemberToChannel(
+        document.getElementById('addChannelId').value,
+        document.getElementById('addMemberId').value)">
+        Add Member to Channel
+    </button>
+</div>
+
+<div>
+    <h2>Kanal-Mitglieder anzeigen</h2>
+    <input type="text" id="getMembersChannelId" placeholder="Channel ID">
+    <button onclick="getChannelMembers(document.getElementById('getMembersChannelId').value)">
+        Get Channel Members
+    </button>
+</div>
+
+<!-- Kanal zu Mitglied hinzufügen -->
+<div>
+    <h2>Kanal zu Mitglied hinzufügen</h2>
+    <input type="text" id="channelId" placeholder="Channel ID">
+    <input type="text" id="memberId" placeholder="Member ID">
+    <button onclick="addChannelToMember(
+        document.getElementById('memberId').value,
+        document.getElementById('channelId').value)">
+        Add Channel to Member
+    </button>
+</div>
+
+<!-- Kanal zu Mitglied Updaten -->
+<div>
+    <h2> Mitglied UPDATE</h2>
+    <input type="text" id="channelIdUpdate" placeholder="Channel ID">
+    <input type="text" id="memberIdUpdate" placeholder="Member ID">
+    <input type="text" id="rolle" placeholder="new rolle">
+    <button onclick="updateMemberRole(
+        document.getElementById('channelIdUpdate').value,
+        document.getElementById('memberIdUpdate').value,
+        document.getElementById('rolle').value
+        
+        )">
+       Update Member role
+    </button>
+</div>
+
+<div>
+    <h2>Ein Mitglied anzeigen</h2>
+    <input type="text" id="mymemberId" placeholder="Member ID">
+    <button onclick="getMemberByMemberId(document.getElementById('mymemberId').value)">
+        Get Member Info
+    </button>
+</div>
+
+
+    <!-- Skripte laden -->
+    <script type="module" src="./firebase.js"></script>
+    <script type="module" src="./auth.js"></script>
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
