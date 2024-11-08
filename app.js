@@ -12,7 +12,7 @@ async function saveAuthUserinFireStore(displayName, avatarUrl) {
   const user = auth.currentUser;
   const memberId = `user${Math.floor(Math.random() * 10000)}`;
   const userRef = doc(collection(db, "members"));
-
+  await saveUserIdMemberIdMapping(user.uid, memberId)
   await setDoc(userRef, {
     userId: user.uid,
     memberId: memberId,
@@ -25,12 +25,31 @@ async function saveAuthUserinFireStore(displayName, avatarUrl) {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
-
+  
   console.log(`Benutzerdaten für ${user.uid} mit memberId ${memberId} in Firestore gespeichert`);
 }
 window.saveAuthUserinFireStore = saveAuthUserinFireStore;
 
+// Hinzufügen der Zuordnung zu `userId_memberid`
+async function saveUserIdMemberIdMapping(userId, memberId) {
+  const mappingRef = doc(db, "userId_memberid", userId);
+  await setDoc(mappingRef, { memberId: memberId });
+  console.log(`Zuordnung userId -> memberId gespeichert: ${userId} -> ${memberId}`);
+}
 
+async  function getMemberId($userId) {
+  const docRef = doc(db, "userId_memberid", $userId);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    console.log("MemberId data:", docSnap.data());
+    return docSnap.data().memberId;
+  } else {
+    console.log("No such document!");
+    return null;
+  }
+}
+
+window.getMemberId = getMemberId;
 // --------- Ruft alle Mitglieder aus der Members-Sammlung ab (z. B. für Profil- oder Mitgliederlisten)
 async function getAllMembers() {
   const membersRef = collection(db, "members");
