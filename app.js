@@ -1,7 +1,7 @@
 // app.js
 
 import { db } from "./firebase.js";
-import { collection, doc, setDoc, addDoc, query, where, getDocs,getDoc, arrayUnion,updateDoc  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { collection, doc, setDoc, addDoc, query, where, getDocs, getDoc, arrayUnion, updateDoc, documentId } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { auth } from "./firebase.js";
 
 console.log("from app.js");
@@ -131,14 +131,23 @@ window.addMemberToChannel = addMemberToChannel;
 
 // --------- Ruft alle Mitglieder eines bestimmten Kanals ab
 async function getChannelMembers(channelId) {
-  const q = query(collection(db, "channels", channelId, "members"));
-  const querySnapshot = await getDocs(q);
-  querySnapshot.forEach((doc) => {
-    console.log(doc.id, " => ", doc.data());
-  });
-}
-window.getChannelMembers = getChannelMembers;
+  console.log("!!!getChannelMembers", channelId);
 
+  const membersRef = collection(db, "channels", channelId, "members");
+  const q = query(membersRef);
+  const querySnapshot = await getDocs(q);
+
+  if (!querySnapshot.empty) {
+    console.log("Erstes Dokument in querySnapshot:", querySnapshot.docs[0].data());
+        querySnapshot.forEach((doc) => {
+      console.log(doc.id, " => ", doc.data());
+    });
+  } else {
+    console.log("Keine Mitglieder für diesen Kanal gefunden.");
+  }
+}
+
+window.getChannelMembers = getChannelMembers;
 
 // --------- Fügt eine Kanalreferenz zu einem Mitglied hinzu (vereinfacht spätere Suchen)
 async function addChannelToMember(memberId, channelId) {
@@ -187,6 +196,26 @@ async function getAllChannels() {
 }
 
 window.getAllChannels = getAllChannels;
+
+
+
+// ------ BULK 
+async function getChannelsByIds(channelIds) {
+  const channelsRef = collection(db, "channels");
+  console.log("channelRef:", channelsRef);
+  console.log("channelIds:", channelIds);
+  const q = query(channelsRef, where(documentId(), "in", channelIds));
+  const querySnapshot = await getDocs(q);
+  const channelsData = querySnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+
+  console.log("Gefundene Kanäle:", channelsData);
+  return { channels: channelsData };
+}
+
+window.getChannelsByIds = getChannelsByIds;
 
 
 // Funktion zum Abrufen und Aktualisieren der Rolle eines Mitglieds in einem Kanal
