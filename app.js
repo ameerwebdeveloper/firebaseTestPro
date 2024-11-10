@@ -11,45 +11,62 @@ console.log("from app.js");
 async function saveAuthUserinFireStore(displayName, avatarUrl) {
   const user = auth.currentUser;
   const memberId = `user${Math.floor(Math.random() * 10000)}`;
+
+  await savePrivateMemberFields(user, memberId);
+
+  // Öffentliche Felder in der Members-Sammlung speichern
   const userRef = doc(collection(db, "members"));
-  await saveUserIdMemberIdMapping(user.uid, memberId)
   await setDoc(userRef, {
-    userId: user.uid,
-    memberId: memberId,
-    email: user.email,
     displayName: displayName || user.displayName || "Anonym",
     avatarUrl: avatarUrl || null,
     status: "offline",
-    memberOfChannelIds: [],
-    hasChatIds: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
-  
-  console.log(`Benutzerdaten für ${user.uid} mit memberId ${memberId} in Firestore gespeichert`);
 }
 window.saveAuthUserinFireStore = saveAuthUserinFireStore;
 
-// Hinzufügen der Zuordnung zu `userId_memberid`
-async function saveUserIdMemberIdMapping(userId, memberId) {
-  const mappingRef = doc(db, "userId_memberid", userId);
-  await setDoc(mappingRef, { memberId: memberId });
-  console.log(`Zuordnung userId -> memberId gespeichert: ${userId} -> ${memberId}`);
-}
 
-async  function getMemberId($userId) {
-  const docRef = doc(db, "userId_memberid", $userId);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    console.log("MemberId data:", docSnap.data());
-    return docSnap.data().memberId;
+async function savePrivateMemberFields(user, memberId) {
+  const privateUserRef = doc(db, "memberPrivate", memberId);
+  
+  await setDoc(privateUserRef, {
+    userId: user.uid,
+    memberId: memberId,
+    email: user.email,
+    memberOfChannels: [],  
+    chatIds: [],           
+  });
+  
+  console.log("Folgende private Felder gespeichert:");
+  console.log("memberId:", memberId);
+  console.log("email:", user.email);
+  console.log("memberOfChannels:", []);
+  console.log("chatIds:", []);
+}
+// --------- Ruft alle privaten Daten aus der `memberPrivate`-Sammlung anhand der `userId` ab
+async function getMemberPrivateData(userId) {
+  const membersRef = collection(db, "memberPrivate");
+  const q = query(membersRef, where("userId", "==", userId));
+  const querySnapshot = await getDocs(q);
+
+  // Überprüfen, ob die Abfrage ein Dokument gefunden hat
+  if (!querySnapshot.empty) {
+    const memberDoc = querySnapshot.docs[0]; // Nimm das erste gefundene Dokument
+    const data = memberDoc.data();
+
+    console.log("Member private data:", data); // Gibt die Daten des Dokuments aus
+    return data;
   } else {
-    console.log("No such document!");
+    console.log("Kein Dokument mit der userId:", userId, "gefunden.");
     return null;
   }
 }
 
-window.getMemberId = getMemberId;
+
+window.getMemberPrivateData = getMemberPrivateData;
+
+
 // --------- Ruft alle Mitglieder aus der Members-Sammlung ab (z. B. für Profil- oder Mitgliederlisten)
 async function getAllMembers() {
   const membersRef = collection(db, "members");
@@ -60,7 +77,6 @@ async function getAllMembers() {
     members.push({
       displayName: data.displayName,
       avatarUrl: data.avatarUrl,
-      memberId: data.memberId,
     });
   });
   console.log("All Members:", members);
@@ -96,10 +112,6 @@ window.getMemberByMemberId = getMemberByMemberId;
 
 // --------- Erstellt einen neuen Kanal (anfangs ohne Mitglieder und Nachrichten)
 async function createChannel(name, description, memberId) {
-  const q = query(collection(db, "channels"), where("name", "==", name));
-  const querySnapshot = await getDocs(q);
-
-  if (querySnapshot.empty) {
     const response = await addDoc(collection(db, "channels"), {
       name: name,
       description: description,
@@ -109,12 +121,17 @@ async function createChannel(name, description, memberId) {
     });
     console.log(`Channel created with ID: ${response.id}`);
     return response.id;
-  } else {
-    console.log("Channel with this name already exists.");
-    return querySnapshot.docs[0].id;
-  }
 }
 window.createChannel = createChannel;
+
+
+
+
+/*
+ //TODO
+  const q = query(collection(db, "channels"), where("name", "==", name));
+  const querySnapshot = await getDocs(q);
+*/
 
 
 // --------- Fügt ein Mitglied zu einem Kanal hinzu
@@ -149,33 +166,27 @@ async function getChannelMembers(channelId) {
 
 window.getChannelMembers = getChannelMembers;
 
-// --------- Fügt eine Kanalreferenz zu einem Mitglied hinzu (vereinfacht spätere Suchen)
 async function addChannelToMember(memberId, channelId) {
   try {
-    const membersRef = collection(db, "members");
-    const q = query(membersRef, where("memberId", "==", memberId));
-    const querySnapshot = await getDocs(q);
+    // Referenz zum `memberPrivate`-Dokument mit der `userId`, die `memberId` zugeordnet ist
+    const memberPrivateDocRef = doc(db, "memberPrivate", memberId); // Falls `memberId` der userId entspricht
 
-    if (querySnapshot.empty) {
-      console.log("Benutzer mit dieser memberId nicht gefunden");
-      return;
-    }
+    // Aktualisiere `memberOfChannels`-Array in `memberPrivate`, ohne das Dokument zuerst zu lesen
+    await setDoc(
+      memberPrivateDocRef,
+      {
+        memberOfChannels: arrayUnion(channelId), // Fügt die `channelId` hinzu, falls noch nicht vorhanden
+      },
+      { merge: true }
+    );
 
-    const memberDoc = querySnapshot.docs[0];
-    const memberDocId = memberDoc.id;
-
-    const memberRef = doc(db, "members", memberDocId);
-    await setDoc(memberRef, {
-      memberOfChannelIds: arrayUnion(channelId),
-    }, { merge: true });
-
-    console.log(`Kanal ${channelId} wurde zum Benutzer mit memberId ${memberId} hinzugefügt.`);
+    console.log(`Kanal ${channelId} wurde zum Benutzer mit memberId ${memberId} in memberPrivate hinzugefügt.`);
   } catch (error) {
-    console.error("Fehler beim Hinzufügen des Kanals zum Mitglied:", error);
+    console.error("Fehler beim Hinzufügen des Kanals zum Mitglied in memberPrivate:", error);
   }
 }
-window.addChannelToMember = addChannelToMember;
 
+window.addChannelToMember = addChannelToMember;
 
 
 

@@ -29,14 +29,22 @@
         <h2>Abmelden</h2>
         <button onclick="handleLogout()">Abmelden</button>
     </div>
-
+    <h1>----------------------------------------------------</h1>
     <!-- App-Funktionen testen -->
     <h1>App-Funktionen testen</h1>
 
     <!-- Benutzerverwaltung -->
-    <button onclick="saveAuthUserinFireStore('Test User', 'https://example.com/avatar.png')">saveAuthUserinFireStore</button>
-    <button onclick="getAllMembers()">getAllMembers</button>
-    <button onclick="getAllChannels()">getAllChannels</button>
+    <button onclick="saveAuthUserinFireStore('Test User', 'https://example.com/avatar.png')">saveAuthUserinFireStore</button> <br><br>
+    <button onclick="getAllMembers()">getAllMembers(PUBLIC)</button><br><br>
+
+        
+    <div>
+        <input type="text" id="userIdPrivate" placeholder="USER ID">
+        <button onclick="getMemberPrivateData(document.getElementById('userIdPrivate').value)">
+            getMemberPrivateData
+        </button>
+    </div> <br><br>
+    <button onclick="getAllChannels()">getAllChannels</button><br><br>
 <!-- Kanalverwaltung -->
 <div>
     <h2>Kanal erstellen</h2>
@@ -115,10 +123,10 @@
 </div>
 
 <div>
-    <h2>Member ID bekommen</h2>
+    <h2>Private Daten bekommen (geschützt)</h2>
     <input type="text" id="userId_für_member" placeholder="User Uid angeben">
-    <button onclick="getMemberId(document.getElementById('userId_für_member').value)">
-        Get Member Info
+    <button onclick="getMemberPrivateData(document.getElementById('userId_für_member').value)">
+       getPrivateData
     </button>
 </div>
 
